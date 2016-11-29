@@ -81,7 +81,6 @@ const Point pointDisplayPos3Player[3] = { Point(720, 560), Point(720, 100), Poin
 const int showPointScale = 3;
 const int pointDispTime = 90;		//30hz 3s
 const int maxContinuousBallreflect = 5;				//ボールがこの回数以上連続してバーと衝突しているならボールがバーで囲まれて動けなくなっていると見て一時的に反射を無効とする
-int isPlaying = 0;					//pongのゲームとしての状態変移を示す
 int pongCnt = 0;					//pong用カウンタ変数
 int winConditionPoint = 10;			//勝利に必要な点数
 
@@ -536,6 +535,10 @@ public:
 	}
 	void deactivate(){
 		stat = 0;
+		for (int i = 0; i < lineNum + 1; i++){
+			barArray[i][0] = 0;
+			barArray[i][1] = 0;
+		}
 	}
 	void addBar(int px, int py){		//頂点を追加
 		barArray[ringBufIndex][0] = DifDisplayX*px;
@@ -874,6 +877,7 @@ public:
 		int loopTime = 0;
 		int frame = 0;										//経過フレーム
 		int winnerId = 0;									//勝利者のid
+		int gamemode = 0;									//0:お絵かき　1:PONG
 		bool isDebug = false;
 		vector<ballBarCollisionList> PlayerBallCCollideListdebug;	//ボールとプレイヤーバーの衝突リスト
 
@@ -882,6 +886,8 @@ public:
 		cap.set(CV_CAP_PROP_FRAME_WIDTH, FrameWidth);
 		cap.set(CV_CAP_PROP_FRAME_HEIGHT, FrameHeight);
 		cout << "Initializing\n";
+
+		Pong game(2, 1);
 
 		if (!cap.isOpened()) {
 			std::cout << "failed to capture camera";
@@ -1008,14 +1014,162 @@ public:
 				
 			}
 
+			disp2 = disp.clone();	//disp2<-dispコピー dispは真っ黒なので実質的に黒塗りつぶし　
+
+			//モードの処理gamemodeに応じてお絵かきとPONGを切り替える
+			switch (gamemode){
+			case 0:　　
+
+				//お絵かき
+				for (auto point : PointData){
+					point.drawLine(disp);		//線を描く
+				}
+				break;
+
+			case 1:
+
+				//PlayerBarRenewInterbalフレームごとにプレイヤーバーを更新する
+				if (frame%PlayerBarRenewInterbal == 0){
+					game.updateBars(PointData, false);
+				}
+
+				game.activeBall(0);
+				game.displayPlayerPoint(disp2);		//プレイヤーの得点を表示
+				switch (game.getPlayerNum()){		//プレイヤー数で処理を分ける,２人のときは左右の壁の衝突判定をとり、3人は円形フィールドの判定をとる
+					
+					case 2:							//2人プレイ
+
+						game.activeBall(0);
+						game.moveBalls();
+						if (game.checkBallHitLeftWall(0)){		//左の壁にボールがぶつかったか
+							game.addBallScore(0, 1);
+							gamemode = 2;
+							pongCnt = pointDispTime;
+							game.resetBallPos(0);
+							game.setBallInitVec(0, Point(-5, -3));
+							if (game.getPlayerbarPoint(0) >= winConditionPoint){
+								gamemode = 3;						//winConditionPointだけポイントをとったら勝利;
+								winnerId = 0;					//勝者のプレイヤーid
+							}
+						}
+						if (game.checkBallHitRightWall(0)){		//右の壁にボールがぶつかったか
+							game.addBallScore(1, 1);
+							gamemode = 2;
+							pongCnt = pointDispTime;
+							game.resetBallPos(0);
+							game.setBallInitVec(0, Point(5, 3));
+							if (game.getPlayerbarPoint(1) >= winConditionPoint){
+								gamemode = 3;						//winConditionPointだけポイントをとったら勝利;
+								winnerId = 1;					//勝者のプレイヤーid
+							}
+						}
+						break;
+
+					case 3:							//3人プレイ
+						game.activeBall(0);
+						game.moveBalls();
+
+
+						vector<collisionList> CircularFieldcollideList = game.checkCollideWithCircleField();		//ボールと円形フィールドの衝突を検出と接触したか調べ、リストを取得
+
+						if (!CircularFieldcollideList.empty()){												//collideListから、円形フィールドに衝突したボールがあったとき
+							for (auto con : CircularFieldcollideList){
+								//if (con.size() == 0) break;
+
+								int ballId = con.id;											//衝突したボールのid(直前にこのボールを跳ね返したプレイヤーのid)
+								cout << "id=" << to_string(ballId);
+								cout << "con.angle=" << to_string(con.angle);
+								if ((con.angle > 0.0) && (con.angle < 2.0 / 3.0 * M_PI)){				//con.angleをもとに、角度ごとにどのプレイやの得点なのかを処理する（）
+									if ((ballId == 0)) game.addBallScore(0, -1);						//自分のゴールに入れてしまったら-2点の減点
+									//0度~2/3pi度ならid=0の得点
+									game.addBallScore(0, -1);
+									gamemode = 2;
+									pongCnt = pointDispTime;
+									game.resetBallPos(0);
+									game.setBallInitVec(0, Point(0, 3));			//得点後のボールの初期ベクトル
+									game.setBallId(0, 0);
+									cout << "goal=0" << endl;
+								}
+								else if ((con.angle < 0.0) && (con.angle > -2.0 / 3.0 * M_PI)){
+									//id=1の得点
+									if (ballId == 1) game.addBallScore(1, -1);
+									game.addBallScore(1, -1);
+									gamemode = 2;
+									pongCnt = pointDispTime;
+									game.resetBallPos(0);
+									game.setBallInitVec(0, Point(-3, 0));			//得点後のボールの初期ベクトル
+									game.setBallId(0, 1);
+									cout << "goal=1" << endl;
+								}
+								else{
+									if (ballId == 2) game.addBallScore(2, -1);
+									game.addBallScore(2, -1);
+									gamemode = 2;
+									pongCnt = pointDispTime;
+									game.resetBallPos(0);
+									game.setBallInitVec(0, Point(-5, -2));			//得点後のボールの初期ベクトル
+									game.setBallId(0, 2);
+									cout << "goal=2" << endl;
+								}
+								game.addBallScore(ballId, 1);						//最後にボールを入れたプレイヤを得点
+								/*
+								//フィールドとの衝突情報を元に、プレイやにスコアを追加する。
+								if (game.getPlayerbarPoint(ballId) >= winConditionPoint){
+								isPlaying = 3;						//winConditionPointだけポイントをとったら勝利;
+								winnerId = ballId;					//勝者のプレイヤーid
+								}
+								*/
+							}
+
+							break;
+						}
+					}
+					break;
+
+			case 2:							//pngCntが0になるまで点数を表示
+
+				//PlayerBarRenewInterbalフレームごとにプレイヤーバーを更新する
+				if (frame%PlayerBarRenewInterbal == 0){
+					game.updateBars(PointData, false);
+				}
+
+				game.displayPlayerPoint(disp2);		//プレイヤーの得点を表示
+				game.deactiveBall(0);
+				pongCnt--;
+				if (pongCnt == 0) gamemode = 1;
+				break;
+
+			case 3:							//プレイヤー互いのの点数を表示中
+
+				//PlayerBarRenewInterbalフレームごとにプレイヤーバーを更新する
+				if (frame%PlayerBarRenewInterbal == 0){
+					game.updateBars(PointData, false);
+				}
+				game.displayPlayerPoint(disp2);		//プレイヤーの得点を表示
+				game.deactiveBall(0);
+				break;
+			}
+
 			//colに応じた色の線をdispに描くお絵かき処理
 
-			for (auto point : PointData){
-				point.drawLine(disp);		//線を描く
+			if (gamemode > 0){
+
+				//プレイヤーバーとボールの衝突を判定し、衝突したボールのidと色を衝突したプレイヤーのidと色に変える
+				if (frame > PlayerBarRenewInterbal*(lineNum + 1)){
+					vector<ballBarCollisionList> PlayerBallCCollideList = game.checkPlayerBallCollide();				//プレイヤーバーとボールの衝突を調べ、リストを取得
+					if (!PlayerBallCCollideList.empty()){
+						game.changeAllBallColor(PlayerBallCCollideList);										//プレイヤーバーと衝突したボールの色を衝突リストをもとに変更する
+						PlayerBallCCollideListdebug = PlayerBallCCollideList;
+					}
+				}
 			}
-			disp2 = disp.clone();	//disp2<-dispコピー
+
+
 
 			for (int pointNum = 0; pointNum < LightMax - 0; pointNum++){		//display bin to 
+
+				
+				game.draw(disp2);		//PONGに関するものを表示
 
 				//putText(disp2, "(x,y)=(" + to_string(PointData[pointNum].getX()) + "," + to_string(PointData[pointNum].getY()) + ")" + "id=" + to_string(PointData[pointNum].getId()) + ":color=" + to_string(PointData[pointNum].getColor()) + "pointData[" + to_string(pointNum) + "]", Point(DifDisplayX*PointData[pointNum].getX(), DifDisplayY*PointData[pointNum].getY()), FONT_HERSHEY_COMPLEX, 0.5, Scalar(200, 200, 200));
 				putText(disp2, "id=" + to_string(PointData[pointNum].getId()) + ":color=" + to_string(PointData[pointNum].getColor()), Point(DifDisplayX*PointData[pointNum].getX(), DifDisplayY*PointData[pointNum].getY()), FONT_HERSHEY_COMPLEX, 0.5, Scalar(200, 200, 200));
@@ -1029,7 +1183,7 @@ public:
 				putText(disp2, "fps=" + to_string(loopTime), Point(DispFrameWidth - 80, DispFrameHeight - 35), FONT_HERSHEY_COMPLEX, 0.5, Scalar(200, 200, 200));
 			}
 
-			putText(Thresholded2, "GreyThreshold=" + to_string(GreyThreshold) + ":RedThreshold=" + to_string(RedThreshold) + ":BlueThreshold=" + to_string(BlueThreshold) + ":greenThreshold=" + to_string(greenThreshold) + ":frame=" + to_string(frame) + ":isPlaying=" + to_string(isPlaying), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.5, Scalar(200, 200, 200));
+			putText(Thresholded2, "G_Thre=" + to_string(GreyThreshold) + ":R_Thre=" + to_string(RedThreshold) + ":B_Thre=" + to_string(BlueThreshold) + ":G_Thre=" + to_string(greenThreshold) + ":frame=" + to_string(frame) + ":gamemode=" + to_string(gamemode), Point(0, 10), FONT_HERSHEY_COMPLEX, 0.5, Scalar(200, 200, 200));
 
 			if (isDebug){
 				split(rawCamera, colorSplitDisp);
@@ -1088,6 +1242,14 @@ public:
 			}
 			if (key == 'h') {					//デバッグモード
 				isDebug = !isDebug;
+			}
+			if (key == 'u'){					
+				game.startGame();
+				gamemode = 1;
+			}
+			if (key == 'j'){
+				game.endGame();
+				gamemode = 0;
 			}
 
 

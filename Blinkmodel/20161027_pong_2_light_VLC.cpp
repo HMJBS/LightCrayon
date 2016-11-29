@@ -1155,7 +1155,6 @@ public:
 			}
 
 			cout << "d" << endl;
-			game.draw(disp2);
 
 			/*
 			for (auto vecs : PlayerBallCCollideListdebug){
