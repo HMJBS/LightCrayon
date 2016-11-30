@@ -1,6 +1,6 @@
 ﻿  20161027_pong_2_light_VLC_oekaki.cpp
+20161027_pong_2_light_VLC_oekaki.cpp(54): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
 20161027_pong_2_light_VLC_oekaki.cpp(55): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
-20161027_pong_2_light_VLC_oekaki.cpp(56): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
 20161027_pong_2_light_VLC_oekaki.cpp(219): warning C4244: '=' : conversion from 'const float' to 'int', possible loss of data
 20161027_pong_2_light_VLC_oekaki.cpp(221): warning C4244: '=' : conversion from 'const float' to 'int', possible loss of data
 20161027_pong_2_light_VLC_oekaki.cpp(281): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
@@ -39,12 +39,12 @@
 20161027_pong_2_light_VLC_oekaki.cpp(772): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
 20161027_pong_2_light_VLC_oekaki.cpp(773): warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
 20161027_pong_2_light_VLC_oekaki.cpp(778): warning C4244: 'initializing' : conversion from 'double' to 'int', possible loss of data
-20161027_pong_2_light_VLC_oekaki.cpp(953): warning C4244: '=' : conversion from 'const float' to 'int', possible loss of data
-20161027_pong_2_light_VLC_oekaki.cpp(955): warning C4244: '=' : conversion from 'const float' to 'int', possible loss of data
-20161027_pong_2_light_VLC_oekaki.cpp(1175): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
-20161027_pong_2_light_VLC_oekaki.cpp(1180): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
-20161027_pong_2_light_VLC_oekaki.cpp(1183): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
-20161027_pong_2_light_VLC_oekaki.cpp(1256): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
+20161027_pong_2_light_VLC_oekaki.cpp(950): warning C4244: '=' : conversion from 'const float' to 'int', possible loss of data
+20161027_pong_2_light_VLC_oekaki.cpp(952): warning C4244: '=' : conversion from 'const float' to 'int', possible loss of data
+20161027_pong_2_light_VLC_oekaki.cpp(1168): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+20161027_pong_2_light_VLC_oekaki.cpp(1173): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+20161027_pong_2_light_VLC_oekaki.cpp(1176): warning C4244: 'argument' : conversion from 'const float' to 'int', possible loss of data
+20161027_pong_2_light_VLC_oekaki.cpp(1247): warning C4244: '=' : conversion from 'double' to 'int', possible loss of data
   Generating code
   Finished generating code
   Blinkmodel.vcxproj -> C:\Users\tanuki\Documents\Visual Studio 2013\Projects\Blinkmodel\Release\Blinkmodel.exe

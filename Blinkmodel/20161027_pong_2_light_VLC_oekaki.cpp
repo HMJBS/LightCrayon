@@ -40,14 +40,13 @@ int  LineThickness = 10;								//線幅
 int RedThreshold = 99;									//赤色の閾値
 int BlueThreshold = 120;									//青色の閾値
 int greenThreshold = 120;
-int SpanHoughTransform = 30;							//破風変換を行うフレーム間隔
 const float  DifDisplayX = DispFrameWidth / FrameWidth;		// dispFrame/Frame カメラ画像からウインドウへの座標変換 xy座標にこれをかけるとdispでの座標になる
 const float  DifDisplayY = DispFrameHeight / FrameHeight;
-int mode = 2;					//プログラムのモード　0:お絵かき 1:pongゲーム　2:pongゲーム点数表示中
-const string WindowNameDisp = "Disp";
+const string windowNameDisp = "Disp";
+const string windowNameThreshold2 = "Threshold2";
 
-vector<Scalar> penColor = { Scalar(0, 0, 0), Scalar(150, 0, 0), Scalar(0, 150, 0), Scalar(0, 0, 150), Scalar(150, 150, 0) };  //パネルの変化する色　ID=0は黒
-vector<Scalar> idColor = { Scalar(0, 150, 150), Scalar(150, 0, 0), Scalar(0, 150, 0), Scalar(0, 0, 150), Scalar(150, 150, 0) };  //IDの色
+vector<Scalar> penColor = { Scalar(0, 0, 0), Scalar(150, 0, 0), Scalar(0, 150, 0), Scalar(0, 0, 150), Scalar(150, 150, 0) };			//パネルの変化する色　ID=0は黒
+vector<Scalar> idColor = { Scalar(0, 150, 150), Scalar(150, 0, 0), Scalar(0, 150, 0), Scalar(0, 0, 150), Scalar(150, 150, 0) };			//IDの色
 
 Mat rawCamera;												//カメラ
 Mat Thresholded2;											//rawcameraの表示用コピー
@@ -66,6 +65,7 @@ random_device rndBallDic;					//ボールの方向生産用
 int maxBallSpeed = 64;						//ボールの最高速度
 int defaultBallR = 20;						//ボールのデフォルト半径
 Scalar defaultBallCol = Scalar(0, 255, 0);	//ボールのデフォルト色緑
+
 //for PlayerBar
 const int lineNum = 10;							//ひとつのPlayerBarを構成する線数
 const int lineThickness = 5;
@@ -893,12 +893,11 @@ public:
 			std::cout << "failed to capture camera";
 			return -1;
 		}
-		namedWindow(WindowNameDisp, CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
-		namedWindow( "Thresholded2", CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
+		namedWindow(windowNameDisp, CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
+		namedWindow(windowNameThreshold2, CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
 		namedWindow("blueImage", CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
 		namedWindow("greenImage", CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
 		namedWindow("redImage", CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
-
 
 		while (1){
 
@@ -925,7 +924,6 @@ public:
 									break;
 								}
 							}
-
 							if (isNew){
 								for (int PointNum = 0; PointNum < LightMax - 0; PointNum++){
 									if (!PointData[PointNum].getAlive()){
@@ -940,7 +938,6 @@ public:
 			}
 
 			//すべてのPointを重心を用いて位置情報の更新をする
-
 
 			double gx, gy;
 			Moments moment;
@@ -976,8 +973,8 @@ public:
 						}
 					}
 					else{
-
 					}
+
 					//重心点の赤色成分がRedThreshold以上なら、赤LED点灯と見る
 					if (rawCamera.at<Vec3b>(PointData[pointNum].getY() | 1, PointData[pointNum].getX())[2] > RedThreshold){
 
@@ -1010,15 +1007,14 @@ public:
 				}
 				else{
 
-				}
-				
+				}				
 			}
 
 			disp2 = disp.clone();	//disp2<-dispコピー dispは真っ黒なので実質的に黒塗りつぶし　
 
 			//モードの処理gamemodeに応じてお絵かきとPONGを切り替える
 			switch (gamemode){
-			case 0:　　
+			case 0:
 
 				//お絵かき
 				for (auto point : PointData){
@@ -1164,11 +1160,8 @@ public:
 				}
 			}
 
-
-
 			for (int pointNum = 0; pointNum < LightMax - 0; pointNum++){		//display bin to 
 
-				
 				game.draw(disp2);		//PONGに関するものを表示
 
 				//putText(disp2, "(x,y)=(" + to_string(PointData[pointNum].getX()) + "," + to_string(PointData[pointNum].getY()) + ")" + "id=" + to_string(PointData[pointNum].getId()) + ":color=" + to_string(PointData[pointNum].getColor()) + "pointData[" + to_string(pointNum) + "]", Point(DifDisplayX*PointData[pointNum].getX(), DifDisplayY*PointData[pointNum].getY()), FONT_HERSHEY_COMPLEX, 0.5, Scalar(200, 200, 200));
@@ -1197,15 +1190,14 @@ public:
 				cv::imshow("greenImage", colorSplitDisp[1]);
 				cv::imshow("redImage", colorSplitDisp[2]);
 			}
-			cv::imshow(WindowNameDisp, disp2);
-			cv::imshow("Thresholded2", Thresholded2);
-			//cv::imshow("edgeImage", edgeImage);
-
+			cv::imshow(windowNameDisp, disp2);
+			cv::imshow(windowNameThreshold2, Thresholded2);
 
 			key = waitKey(1);
 
 			if (key == 'q'){					//終了
-				destroyWindow(WindowNameDisp);
+				destroyWindow(windowNameDisp);
+				destroyWindow(windowNameThreshold2);
 				return 0;
 			}
 
@@ -1224,7 +1216,7 @@ public:
 				if (RedThreshold + 1 < 256) RedThreshold++;
 			}
 
-			if (key == 'd'){					//RedThreshold -1wwwi
+			if (key == 'd'){					//RedThreshold -1
 				if (RedThreshold - 1 >= 0) RedThreshold--;
 			}
 			if (key == 'r'){					//BlueThreshold +1
@@ -1243,15 +1235,14 @@ public:
 			if (key == 'h') {					//デバッグモード
 				isDebug = !isDebug;
 			}
-			if (key == 'u'){					
+			if (key == 'u'){					//PONGを開始		
 				game.startGame();
 				gamemode = 1;
 			}
-			if (key == 'j'){
+			if (key == 'j'){					//PONGを終了
 				game.endGame();
 				gamemode = 0;
 			}
-
 
 			loopTime = (cv::getTickCount() - time)*f;
 			frame++;
