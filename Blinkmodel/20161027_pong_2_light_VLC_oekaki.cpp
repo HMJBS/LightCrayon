@@ -509,7 +509,7 @@ private:
 	int ringBufIndex;	//Barを格納する配列のリングバッファ的先頭の要素
 	float barArray[lineNum+1][2];
 	Scalar color;		//バーの色　idColor参照
-	int stat,point;			//1に動作
+	int stat,point;		
 						//idが必要,,受信したidに従って線の色を変えるために
 public:
 	PlayerBar(){
@@ -656,7 +656,8 @@ public:
 		return point;
 	}
 	void setPoint(int ip){
-		point = ip;
+		this->point = ip;
+		cout << "point" << to_string(this->point) << endl;;
 	}	
 	void setColor(Scalar colInp){ color = colInp; }
 	void reset(){
@@ -698,6 +699,7 @@ public:
 			p[i].deactivate();
 		}
 		stat = 0;
+		clearAllPoint();
 	}
 	void moveBalls(){								//ボールをすべて動かす
 		if (stat == 1){
@@ -813,9 +815,7 @@ public:
 				break;
 			}
 		}
-		void dispWinner(int win, Mat& dest){ //win番目のプレイヤーをwinnerとして表示
-			cv::putText(disp2, "Player " + to_string(win) + " WIN", Point(300, 300), FONT_HERSHEY_COMPLEX, 2, Scalar(200, 200, 200), 5);
-		}
+
 		void addBallScore(int id, int scr){
 			p[id].addPoint(scr);
 		}
@@ -823,10 +823,15 @@ public:
 			p[id].setPoint(scr);
 		}
 		void clearAllPoint(){
-			for (auto pp : p){
-				pp.setPoint(0);
-				cout << "point=" << to_string(pp.getPoint()) << endl;
+			for (int pId = 0; pId < playerNum;pId++){
+				cout << "point=" << to_string(p[pId].getPoint()) << endl;
+				p[pId].setPoint(0);
+				cout << "point=" << to_string(p[pId].getPoint()) << endl;
+				//cout << "point=" << to_string(pp.getPoint()) << endl;
 			}
+		}
+		void resetAllBalls(){
+
 		}
 		bool checkBallHitLeftWall(int ballid){
 			return b[ballid].refL;
@@ -902,7 +907,6 @@ public:
 		while (1){
 
 			double f = 1000.0 / cv::getTickFrequency();		//プログラム動作開始からのframe数を取得
-			std::cout << "a" << endl;
 			int64 time = cv::getTickCount();
 
 			while (!cap.grab());
@@ -1108,13 +1112,13 @@ public:
 									cout << "goal=2" << endl;
 								}
 								game.addBallScore(ballId, 1);						//最後にボールを入れたプレイヤを得点
-								/*
+								
 								//フィールドとの衝突情報を元に、プレイやにスコアを追加する。
 								if (game.getPlayerbarPoint(ballId) >= winConditionPoint){
-								isPlaying = 3;						//winConditionPointだけポイントをとったら勝利;
+								gamemode = 3;						//winConditionPointだけポイントをとったら勝利;
 								winnerId = ballId;					//勝者のプレイヤーid
 								}
-								*/
+								
 							}
 
 							break;
@@ -1135,14 +1139,13 @@ public:
 				if (pongCnt == 0) gamemode = 1;
 				break;
 
-			case 3:							//プレイヤー互いのの点数を表示中
+			case 3:							//規定点数を取ってゲーム終了
 
 				//PlayerBarRenewInterbalフレームごとにプレイヤーバーを更新する
-				if (frame%PlayerBarRenewInterbal == 0){
-					game.updateBars(PointData, false);
-				}
+
 				game.displayPlayerPoint(disp2);		//プレイヤーの得点を表示
 				game.deactiveBall(0);
+				cv::putText(disp2, "Player " + to_string(winnerId) + " WIN", Point(130, 100), FONT_HERSHEY_COMPLEX, 2, Scalar(200, 200, 200), 5);
 				break;
 			}
 
