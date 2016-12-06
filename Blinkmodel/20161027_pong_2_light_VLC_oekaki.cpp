@@ -19,6 +19,8 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <Windows.h>
+#include <MMsystem.h>
 
 using namespace std;
 using namespace cv;
@@ -52,8 +54,9 @@ Mat rawCamera;												//カメラ
 Mat Thresholded2;											//rawcameraの表示用コピー
 Mat disp(Size(static_cast<int>(DispFrameWidth), static_cast<int>(DispFrameHeight)), CV_8UC3, Scalar(0, 0, 0));			//メイン画面　
 Mat disp2(Size(DispFrameWidth, DispFrameHeight), CV_8UC3, Scalar(0, 0, 0));			//カーソルと合成されて実際に表示される方
-Mat edgeImage(Size(DispFrameWidth, DispFrameHeight), CV_8UC1, Scalar(0));		//エッジ検出されたイメージ
-vector<Mat> colorSplitDisp;														//閾値調節用のBGR各色の成分のみを抜き出したMAT
+Mat backGround(Size(DispFrameWidth, DispFrameHeight), CV_8UC3, Scalar(0, 0, 0));	//背景画像を保存するMAT
+Mat edgeImage(Size(DispFrameWidth, DispFrameHeight), CV_8UC1, Scalar(0));			//エッジ検出されたイメージ
+vector<Mat> colorSplitDisp;															//閾値調節用のBGR各色の成分のみを抜き出したMAT
 
 //パネル用パラメータ
 int const panelStat = LightMax+1;									//パネルがとりえる状態の総数 すべてのIDの数 + 黒（ID未対応）
@@ -205,9 +208,11 @@ class PointerData{							//画面に表示されるLED光点を管理するクラス
 			if (ttd > TtdLifetime){		//ttdが式一以上ならば、LEDを殺す
 				killPoint();
 			}
+			/*
 			if (allowedIdMis > MaxAllowedIdMismatch){	//IDによるエラーを指定回数連続で検知されたらPointを殺す
 				killPoint();
 			}
+			*/
 			
 		}
 		void setXY(int x, int y){	
@@ -242,6 +247,7 @@ class PointerData{							//画面に表示されるLED光点を管理するクラス
 				}
 				else{
 					allowedIdMis++;					//IDによるエラー検知
+					cout << "point[" << to_string(id) << "]parity bit mismatch" << endl;
 				}
 			}
 		}
@@ -833,11 +839,17 @@ public:
 		void resetAllBalls(){
 
 		}
-		bool checkBallHitLeftWall(int ballid){
+		bool isBallHitLeftWall(int ballid){
 			return b[ballid].refL;
 		}
-		bool checkBallHitRightWall(int ballid){
+		bool isBallHitRightWall(int ballid){
 			return b[ballid].refR;
+		}
+		bool isBallHitUpWall(int ballid){		//上の壁と衝突しているか？
+			return b[ballid].refU;
+		}
+		bool isBallHitDownWall(int ballid){
+			return b[ballid].refD;
 		}
 		void resetBallPos(int ballid){
 			b[ballid].setDafault();
@@ -922,7 +934,7 @@ public:
 					for (volatile int x = 0; x < FrameWidth; x += 50){
 						if (pLine[x] > GreyThreshold){
 							bool isNew = true;					//true if LED is found newly
-							for (int pointNum = 0; pointNum < LightMax - 0; pointNum++){
+							for (int pointNum = 0; pointNum < LightMax - 0; pointNum++){	//発見した光点がすでに見つかっているPointdataと近ければ、すでに見つかっているものとする
 								if ((abs(PointData[pointNum].getX() - x) < 100) & (abs(PointData[pointNum].getY() - y) < 100) & (PointData[pointNum].getAlive())){
 									isNew = false;
 									break;
@@ -932,6 +944,7 @@ public:
 								for (int PointNum = 0; PointNum < LightMax - 0; PointNum++){
 									if (!PointData[PointNum].getAlive()){
 										PointData[PointNum].newPoint(x, y);		//generator new LED
+										cout << "newPoint found at (" << to_string(x) << "," << to_string(y) << ")" << endl;
 										break;
 									}
 								}
@@ -1041,7 +1054,7 @@ public:
 
 						game.activeBall(0);
 						game.moveBalls();
-						if (game.checkBallHitLeftWall(0)){		//左の壁にボールがぶつかったか
+						if (game.isBallHitLeftWall(0)){		//左の壁にボールがぶつかったか
 							game.addBallScore(0, 1);
 							gamemode = 2;
 							pongCnt = pointDispTime;
@@ -1052,7 +1065,7 @@ public:
 								winnerId = 0;					//勝者のプレイヤーid
 							}
 						}
-						if (game.checkBallHitRightWall(0)){		//右の壁にボールがぶつかったか
+						if (game.isBallHitRightWall(0)){		//右の壁にボールがぶつかったか
 							game.addBallScore(1, 1);
 							gamemode = 2;
 							pongCnt = pointDispTime;
@@ -1158,6 +1171,7 @@ public:
 					vector<ballBarCollisionList> PlayerBallCCollideList = game.checkPlayerBallCollide();				//プレイヤーバーとボールの衝突を調べ、リストを取得
 					if (!PlayerBallCCollideList.empty()){
 						game.changeAllBallColor(PlayerBallCCollideList);										//プレイヤーバーと衝突したボールの色を衝突リストをもとに変更する
+						PlaySound("bounce.wav", NULL, SND_FILENAME | SND_ASYNC | SND_NOSTOP);					//反射音を再生
 						PlayerBallCCollideListdebug = PlayerBallCCollideList;
 					}
 				}
