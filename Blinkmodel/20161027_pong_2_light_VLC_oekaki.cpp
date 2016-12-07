@@ -31,8 +31,9 @@ const float  DispFrameWidth = 800;						//dispの横
 const float  DispFrameHeight = 600;						//dispの縦
 int findLightSpan = 30;									//LED探索ルーチンを行うフレーム間隔
 int GreyThreshold = 83;								//2値化のスレッショルド
-int  LightSpaceThreshold = 100;							//光源かノイズかの閾値
+int LightSpaceThreshold = 100;							//光源かノイズかの閾値
 int LightMoveThreshold = 70;							//フレームごとに移動した光源の距離がこれより下ならば同一の光源と見る
+int lightSearchFrameSpan = 50;							//画面上から新しい光源をスキャンするときの最小ピクセル幅
 const int  LightMax = 4;								//最大利用可能人数
 const int  BinDataLong = 5;								//バイナリデータのビット長
 int  TtdLifetime = 30;									//Time to death　LEDが見つからなかったときに増えるttdがこれ以上のとき、LEDは消失したと考える
@@ -929,9 +930,9 @@ public:
 
 			//フレームの一部を捜査して、新しいLEDを検索する。ただし10刻み
 			if (frame%findLightSpan){
-				for (int y = 0; y < FrameHeight; y += 50){
+				for (int y = 0; y < FrameHeight; y += lightSearchFrameSpan){
 					const uchar *pLine = Thresholded2.ptr<uchar>(y);
-					for (volatile int x = 0; x < FrameWidth; x += 50){
+					for (volatile int x = 0; x < FrameWidth; x += lightSearchFrameSpan){
 						if (pLine[x] > GreyThreshold){
 							bool isNew = true;					//true if LED is found newly
 							for (int pointNum = 0; pointNum < LightMax - 0; pointNum++){	//発見した光点がすでに見つかっているPointdataと近ければ、すでに見つかっているものとする
