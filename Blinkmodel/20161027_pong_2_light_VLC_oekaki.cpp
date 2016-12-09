@@ -166,7 +166,7 @@ class PointerData{							//画面に表示されるLED光点を管理するクラス
 		int getLength(){
 			return l;
 		}
-		void addToBin(int dat){					//binにデータ1,0を入れる
+		int addToBin(int dat){					//binにデータ1,0を入れる 返り値: 0:正常　1:ttd上限のためポイント消失　2:MaxAllowedIdMismatchの上限のためポイント消去
 
 			if (dat == 1){		//デバッグ情報
 				debugdat.insert(0,"1");
@@ -205,16 +205,16 @@ class PointerData{							//画面に表示されるLED光点を管理するクラス
 				}
 			}
 			
-			
 			if (ttd > TtdLifetime){		//ttdが式一以上ならば、LEDを殺す
 				killPoint();
+				return 1;
 			}
 			/*
 			if (allowedIdMis > MaxAllowedIdMismatch){	//IDによるエラーを指定回数連続で検知されたらPointを殺す
 				killPoint();
 			}
 			*/
-			
+			return 0;		//
 		}
 		void setXY(int x, int y){	
 			this->lx = this->x;
@@ -677,7 +677,7 @@ public:
 class Pong{
 private:
 	vector<Ball> b;			//ボールの数
-	vector<PlayerBar> p;		//プレイヤー数			作り方を間違えている、Ball.drawからPong.ballNumを読むことができない、Ballの数はPongではなくBallが持つべき
+	vector<PlayerBar> p;		//プレイヤー数	
 	int stat, playerNum, ballNum;	//playerNum:プレイ人数 ballNum:ボール数
 public:
 	Pong(int ply, int mball) :playerNum(ply), ballNum(mball), stat(0){
@@ -996,10 +996,14 @@ public:
 					//重心点の赤色成分がRedThreshold以上なら、赤LED点灯と見る
 					if (rawCamera.at<Vec3b>(PointData[pointNum].getY() | 1, PointData[pointNum].getX())[2] > RedThreshold){
 
-						PointData[pointNum].addToBin(1);
+						if (PointData[pointNum].addToBin(1) == 1){
+							cout << "point[" << to_string(pointNum) << "] is killed by TTD." << endl;
+						}
 					}
 					else{
-						PointData[pointNum].addToBin(0);
+						if (PointData[pointNum].addToBin(0) == 1){
+							cout << "point[" << to_string(pointNum) << "] is killed by TTD." << endl;
+						}
 					}
 
 					//緑,青LEDからidを読み込む処理
