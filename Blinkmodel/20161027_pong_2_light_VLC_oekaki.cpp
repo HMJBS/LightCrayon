@@ -716,20 +716,25 @@ public:
 		}
 	}
 	void updateBars(vector<PointerData>& source, bool isSlow){		//Point Source[LightMax]を元にすべてのプレイヤーバー(Pong::p[])を更新
+		int PointDatId = 0;
 		for (int i = 0; i < playerNum; i++){
 			float srcx = source[i].getX(), srcy = source[i].getY();		//バーの新しい座標を取得
 			if ((srcx != 0) || (srcy != 0)){							//座標が(0,0)でないか
 				cout << "i=" << to_string(i) << endl;
 				cout << "source.size()=" << to_string(source.size()) << endl;
 				cout << "p.size()=" << to_string(p.size()) << endl;
-				p[i].setColor(idColor[source[i].getId()]);
-				if (isSlow){
-					cout << "isSlow=true" << endl;
-					p[i].addSlowBar(srcx, srcy);
-				}
-				else{
-					p[i].addBar(srcx, srcy);
-					cout << "isSlow=false" << endl;
+				cout << "source[i].getId()=" << to_string(source[i].getId()) << endl;
+				PointDatId = source[i].getId();
+				if (PointDatId != -1){
+					p[i].setColor(idColor[source[i].getId()]);
+					if (isSlow){
+						cout << "isSlow=true" << endl;
+						p[i].addSlowBar(srcx, srcy);
+					}
+					else{
+						p[i].addBar(srcx, srcy);
+						cout << "isSlow=false" << endl;
+					}
 				}
 			}
 			else{
