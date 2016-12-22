@@ -248,7 +248,7 @@ class PointerData{							//画面に表示されるLED光点を管理するクラス
 				}
 				else{
 					allowedIdMis++;					//IDによるエラー検知
-					cout << "point[" << to_string(id) << "]parity bit mismatch" << endl;
+					cout << "tick=" << to_string(GetTickCount()) << ":point[" << to_string(id) << "]parity bit mismatch" << endl;
 				}
 			}
 		}
@@ -407,7 +407,7 @@ public:
 		y = static_cast<int>(DispFrameHeight / 2);
 		r = defaultBallR;
 		ax = 4;
-		ay = -3;
+		ay = 0;
 		col = defaultBallCol;
 		stat = 0;
 		refNum = 0;
@@ -514,7 +514,7 @@ public:
 class PlayerBar{
 private:
 	int ringBufIndex;	//Barを格納する配列のリングバッファ的先頭の要素
-	float barArray[lineNum+1][2];
+	float barArray[lineNum+1][2];	//バーの各頂点を格納する配列　リングバッファ
 	Scalar color;		//バーの色　idColor参照
 	int stat,point;		
 						//idが必要,,受信したidに従って線の色を変えるために
@@ -715,16 +715,21 @@ public:
 			}
 		}
 	}
-	void updateBars(vector<PointerData>& source, bool isSlow){		//Point Source[LightMax]を元にすべてのプレイヤーバーを更新
+	void updateBars(vector<PointerData>& source, bool isSlow){		//Point Source[LightMax]を元にすべてのプレイヤーバー(Pong::p[])を更新
 		for (int i = 0; i < playerNum; i++){
 			float srcx = source[i].getX(), srcy = source[i].getY();		//バーの新しい座標を取得
 			if ((srcx != 0) || (srcy != 0)){							//座標が(0,0)でないか
+				cout << "i=" << to_string(i) << endl;
+				cout << "source.size()=" << to_string(source.size()) << endl;
+				cout << "p.size()=" << to_string(p.size()) << endl;
 				p[i].setColor(idColor[source[i].getId()]);
 				if (isSlow){
+					cout << "isSlow=true" << endl;
 					p[i].addSlowBar(srcx, srcy);
 				}
 				else{
 					p[i].addBar(srcx, srcy);
+					cout << "isSlow=false" << endl;
 				}
 			}
 			else{
@@ -1064,7 +1069,7 @@ public:
 							gamemode = 2;
 							pongCnt = pointDispTime;
 							game.resetBallPos(0);
-							game.setBallInitVec(0, Point(-5, -3));
+							game.setBallInitVec(0, Point(-5, 0));
 							if (game.getPlayerbarPoint(0) >= winConditionPoint){
 								gamemode = 3;						//winConditionPointだけポイントをとったら勝利;
 								winnerId = 0;					//勝者のプレイヤーid
@@ -1075,7 +1080,7 @@ public:
 							gamemode = 2;
 							pongCnt = pointDispTime;
 							game.resetBallPos(0);
-							game.setBallInitVec(0, Point(5, 3));
+							game.setBallInitVec(0, Point(5, 0));
 							if (game.getPlayerbarPoint(1) >= winConditionPoint){
 								gamemode = 3;						//winConditionPointだけポイントをとったら勝利;
 								winnerId = 1;					//勝者のプレイヤーid
